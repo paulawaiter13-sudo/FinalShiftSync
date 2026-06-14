@@ -1,0 +1,2 @@
+-- Rename EVENING to AFTERNOON (shift window 15:00–23:00)
+ALTER TYPE "ShiftType" RENAME VALUE 'EVENING' TO 'AFTERNOON';
