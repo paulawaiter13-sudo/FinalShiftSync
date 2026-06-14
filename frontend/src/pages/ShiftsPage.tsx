@@ -229,7 +229,7 @@ export function ShiftsPage() {
             label="Shift type"
             value={form.shiftType}
             onChange={(v) => setForm((f) => ({ ...f, shiftType: v }))}
-            options={Object.entries(shiftTypeLabels).map(([value, label]) => ({
+            options={Object.entries(shiftTypeLabels).map(([value]) => ({
               value,
               label: shiftTypeWithHours(value, shiftTypeLabels),
             }))}
