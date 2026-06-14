@@ -1,5 +1,5 @@
 import express from 'express';
-import cors, { CorsOptions } from 'cors';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import routes from './routes';
 import {
@@ -13,42 +13,38 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:5173',
-  process.env.FRONTEND_URL,
-  process.env.FRONTEND_PREVIEW_URL,
-].filter((origin): origin is string => Boolean(origin));
+  'https://final-shift-sync.vercel.app',
+];
 
-const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests without an Origin header, such as Postman,
-    // Render health checks, or server-to-server requests.
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-      return;
-    }
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow Postman, Render health checks, and server-to-server requests.
+      if (!origin) {
+        return callback(null, true);
+      }
 
-    console.warn(`CORS blocked request from origin: ${origin}`);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-    callback(new Error(`Origin ${origin} is not allowed by CORS`));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-};
+      console.error(`Blocked by CORS: ${origin}`);
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
-app.use(cors(corsOptions));
-
-// Handle browser preflight requests.
-app.options('*', cors(corsOptions));
-
+// The cors middleware above handles preflight requests.
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Optional root endpoint.
 app.get('/', (_req, res) => {
   res.status(200).json({
     message: 'ShiftSync API is running',
@@ -58,7 +54,6 @@ app.get('/', (_req, res) => {
 
 app.use('/api', routes);
 
-// These handlers must remain after all valid routes.
 app.use(notFoundHandler);
 app.use(errorHandler);
 
