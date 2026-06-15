@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../services/api';
 import { Button } from '../components/ui/Button';
+import { AppLogo } from '../components/ui/AppLogo';
 
 export function LoginPage() {
   const { user, login } = useAuth();
@@ -35,12 +36,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen">
       <div className="hidden flex-1 flex-col justify-between bg-sidebar p-10 text-white lg:flex xl:p-12">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500 text-base font-bold shadow-sm">
-            S
-          </div>
-          <span className="text-xl font-semibold">ShiftSync</span>
-        </div>
+        <AppLogo size="lg" onDark />
         <div>
           <h1 className="text-2xl font-bold leading-tight xl:text-3xl">
             Structured shift handovers for 24/7 operations
@@ -55,13 +51,8 @@ export function LoginPage() {
 
       <div className="flex flex-1 items-center justify-center bg-surface p-6 sm:p-8">
         <div className="w-full max-w-sm">
-          <div className="mb-6 lg:hidden">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-                S
-              </div>
-              <span className="text-lg font-semibold text-slate-900">ShiftSync</span>
-            </div>
+          <div className="mb-6 flex justify-center lg:hidden">
+            <AppLogo size="md" />
           </div>
 
           <h2 className="text-xl font-bold text-slate-900">Sign in</h2>

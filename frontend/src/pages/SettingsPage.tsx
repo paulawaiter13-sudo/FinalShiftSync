@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Settings, Users, Shield } from 'lucide-react';
+import { Users, Shield } from 'lucide-react';
 import { getUsers } from '../services/userService';
 import type { User } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,7 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { DataTable } from '../components/ui/DataCard';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { SectionCard } from '../components/ui/SectionCard';
+import { AppLogo } from '../components/ui/AppLogo';
 import { userRoleLabels } from '../utils/labels';
 import { formatDate } from '../utils/format';
 import { ApiError } from '../services/api';
@@ -46,9 +47,7 @@ export function SettingsPage() {
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div className="card flex items-center gap-3 p-4">
-          <div className="rounded-lg bg-blue-50 p-2.5 text-blue-600">
-            <Settings className="h-5 w-5" />
-          </div>
+          <AppLogo size="sm" />
           <div>
             <p className="font-semibold text-slate-900">ShiftSync v1.0</p>
             <p className="text-sm text-slate-500">NOC Handover Platform</p>

@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { useUnreadAnnouncements } from '../../hooks/useUnreadAnnouncements';
+import { AppLogo } from '../ui/AppLogo';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -38,12 +39,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
       }`}
     >
       <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 font-bold text-sm text-white shadow-sm">
-            S
-          </div>
-          <span className="text-base font-semibold tracking-tight">ShiftSync</span>
-        </div>
+        <AppLogo size="sm" onDark />
         <button
           type="button"
           onClick={onNavigate}
