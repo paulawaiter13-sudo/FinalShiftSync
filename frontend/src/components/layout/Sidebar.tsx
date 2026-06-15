@@ -39,7 +39,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
       }`}
     >
       <div className="flex h-14 items-center justify-between border-b border-white/10 px-4">
-        <AppLogo size="sm" onDark />
+        <AppLogo variant="icon" size="sm" />
         <button
           type="button"
           onClick={onNavigate}

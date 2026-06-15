@@ -36,7 +36,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen">
       <div className="hidden flex-1 flex-col justify-between bg-sidebar p-10 text-white lg:flex xl:p-12">
-        <AppLogo size="lg" onDark />
+        <AppLogo variant="full" size="lg" />
         <div>
           <h1 className="text-2xl font-bold leading-tight xl:text-3xl">
             Structured shift handovers for 24/7 operations
@@ -52,7 +52,7 @@ export function LoginPage() {
       <div className="flex flex-1 items-center justify-center bg-surface p-6 sm:p-8">
         <div className="w-full max-w-sm">
           <div className="mb-6 flex justify-center lg:hidden">
-            <AppLogo size="md" />
+            <AppLogo variant="full" size="md" />
           </div>
 
           <h2 className="text-xl font-bold text-slate-900">Sign in</h2>

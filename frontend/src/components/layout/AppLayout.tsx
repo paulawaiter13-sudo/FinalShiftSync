@@ -31,7 +31,7 @@ export function AppLayout() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <AppLogo size="xs" />
+          <AppLogo variant="icon" size="xs" />
         </div>
         <TopBar />
         <main className="p-4 sm:p-5 lg:p-6">

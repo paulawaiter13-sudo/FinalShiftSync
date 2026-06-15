@@ -47,7 +47,7 @@ export function SettingsPage() {
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
         <div className="card flex items-center gap-3 p-4">
-          <AppLogo size="sm" />
+          <AppLogo variant="full" size="sm" />
           <div>
             <p className="font-semibold text-slate-900">ShiftSync v1.0</p>
             <p className="text-sm text-slate-500">NOC Handover Platform</p>
