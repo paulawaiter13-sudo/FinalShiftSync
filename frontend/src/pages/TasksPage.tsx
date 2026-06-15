@@ -10,6 +10,9 @@ import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { EmptyState } from '../components/ui/EmptyState';
+import { DataCard, DataTable } from '../components/ui/DataCard';
+import { Button } from '../components/ui/Button';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import { ListTodo } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { formatDate } from '../utils/format';
@@ -114,13 +117,9 @@ export function TasksPage() {
         title="Task Management"
         subtitle="Open tasks for shift continuity and handover"
         actions={
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
+          <Button onClick={() => setModalOpen(true)}>
             <Plus className="h-4 w-4" /> New Task
-          </button>
+          </Button>
         }
       />
 
@@ -130,7 +129,7 @@ export function TasksPage() {
         </div>
       )}
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="card mb-4 grid gap-3 p-3 sm:grid-cols-2">
         <Select
           label="Status"
           value={filters.status}
@@ -162,45 +161,52 @@ export function TasksPage() {
       ) : tasks.length === 0 ? (
         <EmptyState icon={ListTodo} title="No tasks found" />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
+        <DataCard>
+          <DataTable>
             <thead className="border-b border-slate-100 bg-slate-50/80">
               <tr>
-                <th className="px-4 py-3 font-medium text-slate-600">Title</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Priority</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Status</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Assigned</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Due</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Actions</th>
+                <th className="px-4 py-2.5">Title</th>
+                <th className="px-4 py-2.5">Priority</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Assigned</th>
+                <th className="px-4 py-2.5">Due</th>
+                <th className="px-4 py-2.5">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {tasks.map((task) => (
                 <tr key={task.id} className="hover:bg-slate-50/50">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <p className="font-medium text-slate-800">{task.title}</p>
                     {task.description && (
                       <p className="line-clamp-1 text-xs text-slate-400">{task.description}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <Badge variant={priorityVariant(task.priority)}>
                       {taskPriorityLabels[task.priority]}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <StatusBadge
                       status={task.status}
                       label={taskStatusLabels[task.status]}
                     />
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {task.assignedUser?.fullName ?? '—'}
+                  <td className="px-4 py-2.5">
+                    {task.assignedUser ? (
+                      <div className="flex items-center gap-2">
+                        <UserAvatar name={task.assignedUser.fullName} size="sm" />
+                        <span className="text-slate-600">{task.assignedUser.fullName}</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">
+                  <td className="px-4 py-2.5 text-slate-500">
                     {task.dueDate ? formatDate(task.dueDate) : '—'}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1">
                       {task.status !== 'DONE' && (
                         <button
@@ -225,8 +231,8 @@ export function TasksPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataCard>
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Create Task" wide>
@@ -278,13 +284,9 @@ export function TasksPage() {
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             />
           </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? 'Creating...' : 'Create Task'}
-          </button>
+          </Button>
         </form>
       </Modal>
     </div>

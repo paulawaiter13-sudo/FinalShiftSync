@@ -44,7 +44,7 @@ export function SummaryCard({
   const shiftLabel = shiftTypeLabels[summary.shift.shiftType] ?? summary.shift.shiftType;
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm">
+    <div className="card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-blue-600" />

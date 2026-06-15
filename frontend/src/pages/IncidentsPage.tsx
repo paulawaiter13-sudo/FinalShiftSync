@@ -16,6 +16,9 @@ import { SeverityBadge } from '../components/ui/SeverityBadge';
 import { Modal } from '../components/ui/Modal';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { EmptyState } from '../components/ui/EmptyState';
+import { DataCard, DataTable } from '../components/ui/DataCard';
+import { Button } from '../components/ui/Button';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import { AlertTriangle } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { formatRelative } from '../utils/format';
@@ -107,13 +110,9 @@ export function IncidentsPage() {
         title="Incident Management"
         subtitle="Track, investigate, and resolve operational incidents"
         actions={
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
+          <Button onClick={() => setModalOpen(true)}>
             <Plus className="h-4 w-4" /> New Incident
-          </button>
+          </Button>
         }
       />
 
@@ -123,7 +122,7 @@ export function IncidentsPage() {
         </div>
       )}
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+      <div className="card mb-4 grid gap-3 p-3 sm:grid-cols-3">
         <Select
           label="Severity"
           value={filters.severity}
@@ -167,48 +166,58 @@ export function IncidentsPage() {
       ) : incidents.length === 0 ? (
         <EmptyState icon={AlertTriangle} title="No incidents match your filters" />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
+        <DataCard>
+          <DataTable>
             <thead className="border-b border-slate-100 bg-slate-50/80">
               <tr>
-                <th className="px-4 py-3 font-medium text-slate-600">Title</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Category</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Severity</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Status</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Assigned</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Created</th>
-                <th className="px-4 py-3 font-medium text-slate-600" />
+                <th className="px-4 py-2.5">Title</th>
+                <th className="px-4 py-2.5">Category</th>
+                <th className="px-4 py-2.5">Severity</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Assigned</th>
+                <th className="px-4 py-2.5">Updated</th>
+                <th className="px-4 py-2.5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {incidents.map((inc) => (
                 <tr key={inc.id} className="hover:bg-slate-50/50">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <p className="font-medium text-slate-800">{inc.title}</p>
                     {inc.relatedService && (
                       <p className="text-xs text-slate-400">{inc.relatedService}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-2.5 text-slate-600">
                     {incidentCategoryLabels[inc.category]}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <SeverityBadge severity={inc.severity} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <StatusBadge
                       status={inc.status}
                       label={incidentStatusLabels[inc.status]}
                     />
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {inc.assignedUser?.fullName ?? '—'}
+                  <td className="px-4 py-2.5">
+                    {inc.assignedUser ? (
+                      <div className="flex items-center gap-2">
+                        <UserAvatar name={inc.assignedUser.fullName} size="sm" />
+                        <span className="text-slate-600">{inc.assignedUser.fullName}</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">{formatRelative(inc.createdAt)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5 text-slate-500">
+                    {formatRelative(inc.updatedAt ?? inc.createdAt)}
+                  </td>
+                  <td className="px-4 py-2.5">
                     <Link
                       to={`/incidents/${inc.id}`}
                       className="rounded p-1.5 text-slate-500 hover:bg-slate-100"
+                      aria-label="View incident"
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
@@ -216,8 +225,8 @@ export function IncidentsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataCard>
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Create Incident" wide>
@@ -287,13 +296,9 @@ export function IncidentsPage() {
               ...users.map((u) => ({ value: u.id, label: u.fullName })),
             ]}
           />
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? 'Creating...' : 'Create Incident'}
-          </button>
+          </Button>
         </form>
       </Modal>
     </div>
