@@ -8,6 +8,10 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { SeverityBadge } from '../components/ui/SeverityBadge';
 import { Select } from '../components/ui/Select';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { SectionCard } from '../components/ui/SectionCard';
+import { Button } from '../components/ui/Button';
+import { UserAvatar } from '../components/ui/UserAvatar';
+import { Badge } from '../components/ui/Badge';
 import { useUsers } from '../hooks/useUsers';
 import { formatDate, formatRelative } from '../utils/format';
 import { incidentCategoryLabels, incidentStatusLabels } from '../utils/labels';
@@ -83,7 +87,7 @@ export function IncidentDetailPage() {
     <div>
       <Link
         to="/incidents"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft className="h-4 w-4" /> Back to incidents
       </Link>
@@ -93,13 +97,9 @@ export function IncidentDetailPage() {
         subtitle={incident.relatedService ?? incidentCategoryLabels[incident.category]}
         actions={
           canResolve ? (
-            <button
-              type="button"
-              onClick={handleResolve}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
+            <Button variant="success" onClick={handleResolve}>
               <CheckCircle className="h-4 w-4" /> Resolve
-            </button>
+            </Button>
           ) : null
         }
       />
@@ -110,19 +110,16 @@ export function IncidentDetailPage() {
         </div>
       )}
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         <SeverityBadge severity={incident.severity} />
         <StatusBadge status={incident.status} label={incidentStatusLabels[incident.status]} />
-        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-          {incident.source ?? 'MANUAL'}
-        </span>
+        <Badge variant="default">{incident.source ?? 'MANUAL'}</Badge>
       </div>
 
-      <div className="mb-6 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm lg:col-span-2">
-          <h2 className="mb-2 font-semibold text-slate-900">Description</h2>
+      <div className="mb-4 grid gap-3 lg:grid-cols-3">
+        <SectionCard title="Description" className="lg:col-span-2">
           <p className="whitespace-pre-wrap text-sm text-slate-600">{incident.description}</p>
-          <p className="mt-4 text-xs text-slate-400">
+          <p className="mt-3 text-xs text-slate-400">
             Created {formatDate(incident.createdAt)} ({formatRelative(incident.createdAt)})
           </p>
           {incident.resolvedAt && (
@@ -130,10 +127,10 @@ export function IncidentDetailPage() {
               Resolved {formatDate(incident.resolvedAt)}
             </p>
           )}
-        </div>
+        </SectionCard>
 
-        <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+        <div className="space-y-3">
+          <div className="card p-4">
             <Select
               label="Status"
               value={incident.status}
@@ -144,7 +141,7 @@ export function IncidentDetailPage() {
               }))}
             />
           </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div className="card p-4">
             <Select
               label="Assigned to"
               value={incident.assignedUserId ?? ''}
@@ -154,9 +151,15 @@ export function IncidentDetailPage() {
                 ...users.map((u) => ({ value: u.id, label: u.fullName })),
               ]}
             />
+            {incident.assignedUser && (
+              <div className="mt-2 flex items-center gap-2">
+                <UserAvatar name={incident.assignedUser.fullName} size="sm" />
+                <span className="text-xs text-slate-500">{incident.assignedUser.fullName}</span>
+              </div>
+            )}
           </div>
           {incident.shift && (
-            <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+            <div className="card p-4">
               <p className="text-xs font-medium text-slate-500">Shift</p>
               <Link
                 to={`/shifts/${incident.shift.id}`}
@@ -169,25 +172,25 @@ export function IncidentDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="font-semibold text-slate-900">Investigation Notes</h2>
-        </div>
+      <SectionCard title="Investigation Notes" noPadding>
         <div className="divide-y divide-slate-100">
           {(incident.notes ?? []).length === 0 ? (
-            <p className="px-5 py-6 text-sm text-slate-400">No notes yet</p>
+            <p className="px-4 py-5 text-sm text-slate-400">No notes yet</p>
           ) : (
             incident.notes?.map((note) => (
-              <div key={note.id} className="px-5 py-4">
+              <div key={note.id} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-slate-800">
-                    {note.author.fullName}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <UserAvatar name={note.author.fullName} size="sm" />
+                    <span className="text-sm font-medium text-slate-800">
+                      {note.author.fullName}
+                    </span>
+                  </div>
                   <span className="text-xs text-slate-400">
                     {formatRelative(note.createdAt)}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-slate-600">{note.content}</p>
+                <p className="mt-1.5 pl-9 text-sm text-slate-600">{note.content}</p>
               </div>
             ))
           )}
@@ -198,17 +201,18 @@ export function IncidentDetailPage() {
             onChange={(e) => setNoteText(e.target.value)}
             rows={2}
             placeholder="Add investigation note..."
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
-          <button
+          <Button
             type="submit"
+            size="sm"
             disabled={addingNote || !noteText.trim()}
-            className="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            className="mt-2"
           >
             {addingNote ? 'Adding...' : 'Add Note'}
-          </button>
+          </Button>
         </form>
-      </div>
+      </SectionCard>
     </div>
   );
 }

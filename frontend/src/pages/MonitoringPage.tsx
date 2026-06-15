@@ -17,6 +17,8 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { Modal } from '../components/ui/Modal';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { EmptyState } from '../components/ui/EmptyState';
+import { KpiCard } from '../components/dashboard/KpiCard';
+import { Button } from '../components/ui/Button';
 import { useUsers } from '../hooks/useUsers';
 import { formatRelative } from '../utils/format';
 import { alertStatusLabels, incidentCategoryLabels } from '../utils/labels';
@@ -145,15 +147,10 @@ export function MonitoringPage() {
         title="Monitoring Alerts"
         subtitle="Simulated monitoring system — generate, triage, and convert alerts to incidents"
         actions={
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button onClick={handleGenerate} disabled={generating}>
             <Zap className="h-4 w-4" />
             {generating ? 'Generating...' : 'Generate Mock Alerts'}
-          </button>
+          </Button>
         }
       />
 
@@ -163,21 +160,23 @@ export function MonitoringPage() {
         </div>
       )}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Active Alerts</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{activeCount}</p>
-        </div>
-        <div className="rounded-xl border border-orange-200/80 bg-orange-50/50 p-4 sm:col-span-2">
-          <p className="text-sm text-orange-800">
-            <strong>Monitoring API Simulator</strong> — Generates realistic NOC alerts from
-            templates (Datadog, Prometheus, Grafana, etc.). Convert actionable alerts into
-            tracked incidents.
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <KpiCard
+          title="Active Alerts"
+          value={activeCount}
+          icon={Radio}
+          iconColor="text-amber-600"
+          iconBg="bg-amber-50"
+        />
+        <div className="card flex items-center border-l-4 border-l-orange-400 p-4 sm:col-span-2">
+          <p className="text-sm text-slate-600">
+            <strong className="text-slate-800">Monitoring API Simulator</strong> — Generates
+            realistic NOC alerts from templates. Convert actionable alerts into tracked incidents.
           </p>
         </div>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="card mb-4 grid gap-3 p-3 sm:grid-cols-2">
         <Select
           label="Severity"
           value={filters.severity}
@@ -212,12 +211,9 @@ export function MonitoringPage() {
           description="Click Generate Mock Alerts to simulate incoming events"
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm"
-            >
+            <div key={alert.id} className="card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -229,7 +225,7 @@ export function MonitoringPage() {
                       label={alertStatusLabels[alert.status]}
                     />
                   </div>
-                  <p className="mt-2 text-sm text-slate-600 line-clamp-2">{alert.description}</p>
+                  <p className="mt-1.5 line-clamp-2 text-sm text-slate-600">{alert.description}</p>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
                     <span>Service: {alert.service}</span>
                     <span>Source: {alert.sourceSystem}</span>
@@ -237,56 +233,35 @@ export function MonitoringPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {alert.status === 'NEW' && (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => handleAcknowledge(alert.id)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                      >
+                      <Button variant="secondary" size="sm" onClick={() => handleAcknowledge(alert.id)}>
                         <Check className="h-3.5 w-3.5" /> Acknowledge
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openConvertModal(alert)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-                      >
+                      </Button>
+                      <Button size="sm" onClick={() => openConvertModal(alert)}>
                         <ArrowRightLeft className="h-3.5 w-3.5" /> Convert
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDismiss(alert.id)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50"
-                      >
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDismiss(alert.id)}>
                         <X className="h-3.5 w-3.5" /> Dismiss
-                      </button>
+                      </Button>
                     </>
                   )}
                   {alert.status === 'ACKNOWLEDGED' && (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => openConvertModal(alert)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-                      >
+                      <Button size="sm" onClick={() => openConvertModal(alert)}>
                         <ArrowRightLeft className="h-3.5 w-3.5" /> Convert
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDismiss(alert.id)}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-50"
-                      >
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDismiss(alert.id)}>
                         <X className="h-3.5 w-3.5" /> Dismiss
-                      </button>
+                      </Button>
                     </>
                   )}
                   {alert.incident && (
-                    <Link
-                      to={`/incidents/${alert.incident.id}`}
-                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" /> View Incident
+                    <Link to={`/incidents/${alert.incident.id}`}>
+                      <Button variant="success" size="sm">
+                        <ExternalLink className="h-3.5 w-3.5" /> View Incident
+                      </Button>
                     </Link>
                   )}
                 </div>
@@ -363,13 +338,9 @@ export function MonitoringPage() {
                 ...users.map((u) => ({ value: u.id, label: u.fullName })),
               ]}
             />
-            <button
-              type="submit"
-              disabled={converting}
-              className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-            >
+            <Button type="submit" disabled={converting} className="w-full">
               {converting ? 'Converting...' : 'Create Incident from Alert'}
-            </button>
+            </Button>
           </form>
         )}
       </Modal>

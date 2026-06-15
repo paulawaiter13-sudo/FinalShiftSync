@@ -8,6 +8,8 @@ import { Select } from '../components/ui/Select';
 import { SummaryCard } from '../components/summary/SummaryCard';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { EmptyState } from '../components/ui/EmptyState';
+import { SectionCard } from '../components/ui/SectionCard';
+import { Button } from '../components/ui/Button';
 import { shiftTypeLabels } from '../utils/labels';
 import { ApiError } from '../services/api';
 
@@ -69,15 +71,10 @@ export function SummariesPage() {
         title="AI Shift Summaries"
         subtitle="Auto-generated handover summaries powered by AI (Mock Llama provider)"
         actions={
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={generating || !selectedShiftId}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button onClick={handleGenerate} disabled={generating || !selectedShiftId}>
             <Sparkles className="h-4 w-4" />
             {generating ? 'Generating...' : 'Generate AI Summary'}
-          </button>
+          </Button>
         }
       />
 
@@ -87,21 +84,15 @@ export function SummariesPage() {
         </div>
       )}
 
-      <div className="mb-6 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-blue-200/80 bg-blue-50/40 p-4">
-          <div className="flex items-start gap-3">
-            <Bot className="mt-0.5 h-5 w-5 text-blue-600" />
-            <div>
-              <p className="font-medium text-slate-900">Smart Handover Summary</p>
-              <p className="mt-1 text-sm text-slate-600">
-                Summaries are built from shift incidents, monitoring alerts, tasks, and
-                handover notes. The mock Llama provider can be swapped for a real external API
-                without changing the rest of the platform.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+      <div className="mb-4 grid gap-3 lg:grid-cols-2">
+        <SectionCard title="Smart Handover Summary" icon={Bot} iconColor="text-blue-600">
+          <p className="text-sm text-slate-600">
+            Summaries are built from shift incidents, monitoring alerts, tasks, and handover
+            notes. The mock Llama provider can be swapped for a real external API without
+            changing the rest of the platform.
+          </p>
+        </SectionCard>
+        <div className="card p-4">
           <Select
             label="Generate summary for shift"
             value={selectedShiftId}
@@ -126,7 +117,7 @@ export function SummariesPage() {
           description="Select a shift and click Generate AI Summary"
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {summaries.map((summary, i) => (
             <SummaryCard
               key={summary.id}
