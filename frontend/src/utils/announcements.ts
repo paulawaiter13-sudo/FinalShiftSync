@@ -13,6 +13,7 @@ export function markAnnouncementRead(id: string): void {
   const ids = getReadAnnouncementIds();
   ids.add(id);
   localStorage.setItem(READ_KEY, JSON.stringify([...ids]));
+  window.dispatchEvent(new Event('announcements-read'));
 }
 
 export function isAnnouncementRead(id: string): boolean {

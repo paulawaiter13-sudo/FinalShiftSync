@@ -33,7 +33,7 @@ export function AppLayout() {
           <span className="font-semibold text-slate-900">ShiftSync</span>
         </div>
         <TopBar />
-        <main className="p-4 sm:p-6">
+        <main className="p-4 sm:p-5 lg:p-6">
           <Outlet />
         </main>
       </div>
