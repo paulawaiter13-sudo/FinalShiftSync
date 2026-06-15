@@ -9,6 +9,9 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { Modal } from '../components/ui/Modal';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { EmptyState } from '../components/ui/EmptyState';
+import { DataCard, DataTable } from '../components/ui/DataCard';
+import { Button } from '../components/ui/Button';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import { CalendarClock } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { formatShiftRange, formatDate } from '../utils/format';
@@ -95,16 +98,12 @@ export function ShiftsPage() {
   return (
     <div>
       <PageHeader
-        title="Shift Management"
+        title="Shift Handover"
         subtitle="Start, monitor, and complete operational shifts"
         actions={
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
+          <Button onClick={() => setModalOpen(true)}>
             <Plus className="h-4 w-4" /> New Shift
-          </button>
+          </Button>
         }
       />
 
@@ -115,20 +114,26 @@ export function ShiftsPage() {
       )}
 
       {currentShift && (
-        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
-          <p className="text-sm font-medium text-blue-800">Active Shift</p>
-          <p className="mt-1 text-lg font-semibold text-slate-900">
-            {shiftTypeLabels[currentShift.shiftType]} —{' '}
-            {formatShiftRange(currentShift.startTime, currentShift.endTime)}
-          </p>
-          <p className="text-sm text-slate-600">
-            Operator: {currentShift.responsible.fullName}
-          </p>
-          <Link
-            to={`/shifts/${currentShift.id}`}
-            className="mt-2 inline-flex text-sm font-medium text-blue-600 hover:underline"
-          >
-            View details →
+        <div className="card mb-4 flex flex-wrap items-center justify-between gap-4 border-l-4 border-l-blue-500 p-4">
+          <div className="flex items-center gap-3">
+            <UserAvatar name={currentShift.responsible.fullName} size="lg" />
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-blue-600">
+                Active Shift
+              </p>
+              <p className="font-semibold text-slate-900">
+                {shiftTypeLabels[currentShift.shiftType]} —{' '}
+                {formatShiftRange(currentShift.startTime, currentShift.endTime)}
+              </p>
+              <p className="text-sm text-slate-500">
+                Operator: {currentShift.responsible.fullName}
+              </p>
+            </div>
+          </div>
+          <Link to={`/shifts/${currentShift.id}`}>
+            <Button variant="secondary" size="sm">
+              Open Handover
+            </Button>
           </Link>
         </div>
       )}
@@ -153,39 +158,44 @@ export function ShiftsPage() {
       ) : shifts.length === 0 ? (
         <EmptyState icon={CalendarClock} title="No shifts found" />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
+        <DataCard>
+          <DataTable>
             <thead className="border-b border-slate-100 bg-slate-50/80">
               <tr>
-                <th className="px-4 py-3 font-medium text-slate-600">Type</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Schedule</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Operator</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Status</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Counts</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Actions</th>
+                <th className="px-4 py-2.5">Type</th>
+                <th className="px-4 py-2.5">Schedule</th>
+                <th className="px-4 py-2.5">Operator</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Counts</th>
+                <th className="px-4 py-2.5">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {shifts.map((shift) => (
                 <tr key={shift.id} className="hover:bg-slate-50/50">
-                  <td className="px-4 py-3 font-medium text-slate-800">
+                  <td className="px-4 py-2.5 font-medium text-slate-800">
                     {shiftTypeLabels[shift.shiftType]}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-2.5 text-slate-600">
                     <div>{formatShiftRange(shift.startTime, shift.endTime)}</div>
                     <div className="text-xs text-slate-400">{formatDate(shift.startTime)}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{shift.responsible.fullName}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <UserAvatar name={shift.responsible.fullName} size="sm" />
+                      <span className="text-slate-600">{shift.responsible.fullName}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5">
                     <StatusBadge
                       status={shift.status}
                       label={shiftStatusLabels[shift.status]}
                     />
                   </td>
-                  <td className="px-4 py-3 text-slate-500">
+                  <td className="px-4 py-2.5 text-slate-500">
                     {shift._count?.incidents ?? 0} inc / {shift._count?.tasks ?? 0} tasks
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1">
                       <Link
                         to={`/shifts/${shift.id}`}
@@ -219,8 +229,8 @@ export function ShiftsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
+        </DataCard>
       )}
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Create Shift" wide>
@@ -263,13 +273,9 @@ export function ShiftsPage() {
               ...users.map((u) => ({ value: u.id, label: u.fullName })),
             ]}
           />
-          <button
-            type="submit"
-            disabled={submitting || !form.responsibleId}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button type="submit" disabled={submitting || !form.responsibleId} className="w-full">
             {submitting ? 'Creating...' : 'Create Shift'}
-          </button>
+          </Button>
         </form>
       </Modal>
     </div>

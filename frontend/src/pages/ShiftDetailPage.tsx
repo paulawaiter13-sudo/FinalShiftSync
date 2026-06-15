@@ -1,12 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Play, Square, Save, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  Play,
+  Square,
+  Save,
+  Sparkles,
+  ListTodo,
+  AlertTriangle,
+  CheckCircle2,
+  Circle,
+} from 'lucide-react';
 import * as shiftApi from '../services/shiftService';
 import type { Shift } from '../types';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { SeverityBadge } from '../components/ui/SeverityBadge';
 import { Badge } from '../components/ui/Badge';
+import { SectionCard } from '../components/ui/SectionCard';
+import { UserAvatar } from '../components/ui/UserAvatar';
+import { Button } from '../components/ui/Button';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { formatShiftRange, formatDate, formatRelative } from '../utils/format';
 import { shiftTypeLabels, shiftStatusLabels, taskPriorityLabels } from '../utils/labels';
@@ -99,37 +112,39 @@ export function ShiftDetailPage() {
     return <p className="text-slate-500">Shift not found</p>;
   }
 
+  const openIncidents = (shift.incidents ?? []).filter(
+    (i) => !['RESOLVED', 'CLOSED'].includes(i.status)
+  );
+  const pendingTasks = (shift.tasks ?? []).filter((t) => t.status !== 'DONE');
+
   return (
     <div>
       <Link
         to="/shifts"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft className="h-4 w-4" /> Back to shifts
       </Link>
 
       <PageHeader
-        title={`${shiftTypeLabels[shift.shiftType]} Shift`}
-        subtitle={formatShiftRange(shift.startTime, shift.endTime)}
+        title="Shift Handover"
+        subtitle={`${shiftTypeLabels[shift.shiftType]} · ${formatShiftRange(shift.startTime, shift.endTime)}`}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link to="/shifts">
+              <Button variant="secondary" size="sm">
+                Previous Handovers
+              </Button>
+            </Link>
             {shift.status === 'PLANNED' && (
-              <button
-                type="button"
-                onClick={handleStart}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-              >
+              <Button variant="success" size="sm" onClick={handleStart}>
                 <Play className="h-4 w-4" /> Start Shift
-              </button>
+              </Button>
             )}
             {shift.status === 'ACTIVE' && (
-              <button
-                type="button"
-                onClick={handleEnd}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-              >
-                <Square className="h-4 w-4" /> End Shift
-              </button>
+              <Button variant="danger" size="sm" onClick={handleEnd}>
+                <Square className="h-4 w-4" /> Complete Handover
+              </Button>
             )}
           </div>
         }
@@ -141,94 +156,79 @@ export function ShiftDetailPage() {
         </div>
       )}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Status</p>
-          <div className="mt-2">
+      <div className="mb-4 grid gap-3 sm:grid-cols-4">
+        <div className="card flex items-center gap-3 p-3">
+          <UserAvatar name={shift.responsible.fullName} />
+          <div>
+            <p className="text-xs text-slate-500">Operator</p>
+            <p className="text-sm font-semibold text-slate-900">{shift.responsible.fullName}</p>
+          </div>
+        </div>
+        <div className="card p-3">
+          <p className="text-xs text-slate-500">Status</p>
+          <div className="mt-1">
             <StatusBadge status={shift.status} label={shiftStatusLabels[shift.status]} />
           </div>
         </div>
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Operator</p>
-          <p className="mt-2 font-semibold text-slate-900">{shift.responsible.fullName}</p>
+        <div className="card p-3">
+          <p className="text-xs text-slate-500">Open Incidents</p>
+          <p className="mt-1 text-lg font-bold text-slate-900">{openIncidents.length}</p>
         </div>
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Created</p>
-          <p className="mt-2 text-slate-700">
-            {shift.createdAt ? formatDate(shift.createdAt) : '—'}
-          </p>
+        <div className="card p-3">
+          <p className="text-xs text-slate-500">Pending Tasks</p>
+          <p className="mt-1 text-lg font-bold text-slate-900">{pendingTasks.length}</p>
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Handover Notes</h2>
-          <button
-            type="button"
-            onClick={saveNotes}
-            disabled={saving}
-            className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 disabled:opacity-60"
-          >
-            <Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={5}
-          placeholder="Document issues, follow-ups, and context for the next shift..."
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="font-semibold text-slate-900">
-              Incidents ({shift.incidents?.length ?? 0})
-            </h2>
-          </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SectionCard
+          title="Follow-up Items"
+          icon={AlertTriangle}
+          iconColor="text-orange-500"
+          noPadding
+        >
           <div className="divide-y divide-slate-100">
-            {(shift.incidents ?? []).length === 0 ? (
-              <p className="px-5 py-6 text-sm text-slate-400">No incidents for this shift</p>
+            {openIncidents.length === 0 ? (
+              <p className="px-4 py-5 text-sm text-slate-400">No open incidents</p>
             ) : (
-              shift.incidents?.map((inc) => (
+              openIncidents.map((inc) => (
                 <Link
                   key={inc.id}
                   to={`/incidents/${inc.id}`}
-                  className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50"
+                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-slate-50"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">{inc.title}</p>
-                    <p className="text-xs text-slate-400">{formatRelative(inc.createdAt)}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Circle className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-800">{inc.title}</p>
+                      <p className="text-xs text-slate-400">{formatRelative(inc.createdAt)}</p>
+                    </div>
                   </div>
                   <SeverityBadge severity={inc.severity} />
                 </Link>
               ))
             )}
           </div>
-        </div>
+        </SectionCard>
 
-        <div className="rounded-xl border border-slate-200/80 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-5 py-4">
-            <h2 className="font-semibold text-slate-900">
-              Tasks ({shift.tasks?.length ?? 0})
-            </h2>
-          </div>
+        <SectionCard title="Pending Tasks" icon={ListTodo} iconColor="text-blue-600" noPadding>
           <div className="divide-y divide-slate-100">
-            {(shift.tasks ?? []).length === 0 ? (
-              <p className="px-5 py-6 text-sm text-slate-400">No tasks for this shift</p>
+            {pendingTasks.length === 0 ? (
+              <p className="px-4 py-5 text-sm text-slate-400">No pending tasks</p>
             ) : (
-              shift.tasks?.map((task) => (
+              pendingTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center justify-between gap-3 px-5 py-3"
+                  className="flex items-center justify-between gap-3 px-4 py-2.5"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">{task.title}</p>
-                    <p className="text-xs text-slate-400">
-                      {task.assignedUser?.fullName ?? 'Unassigned'}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Circle className="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-800">{task.title}</p>
+                      <p className="text-xs text-slate-400">
+                        {task.assignedUser?.fullName ?? 'Unassigned'}
+                      </p>
+                    </div>
                   </div>
                   <Badge
                     variant={
@@ -245,28 +245,86 @@ export function ShiftDetailPage() {
               ))
             )}
           </div>
-        </div>
+        </SectionCard>
+      </div>
+
+      <div className="mt-4">
+        <SectionCard title="Shift Notes" icon={Save} iconColor="text-slate-600">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={5}
+            placeholder="Document issues, follow-ups, and context for the next shift..."
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+          <div className="mt-3 flex justify-end">
+            <Button variant="secondary" size="sm" onClick={saveNotes} disabled={saving}>
+              <Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save Notes'}
+            </Button>
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="mt-4">
+        <SectionCard
+          title="Handover Checklist"
+          icon={CheckCircle2}
+          iconColor="text-emerald-600"
+        >
+          <ul className="space-y-2 text-sm text-slate-600">
+            <li className="flex items-center gap-2">
+              {openIncidents.length === 0 ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Circle className="h-4 w-4 text-slate-300" />
+              )}
+              All critical incidents reviewed ({openIncidents.length} open)
+            </li>
+            <li className="flex items-center gap-2">
+              {pendingTasks.length === 0 ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Circle className="h-4 w-4 text-slate-300" />
+              )}
+              Pending tasks documented ({pendingTasks.length} remaining)
+            </li>
+            <li className="flex items-center gap-2">
+              {notes.trim() ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Circle className="h-4 w-4 text-slate-300" />
+              )}
+              Handover notes completed
+            </li>
+            <li className="flex items-center gap-2">
+              {summaries.length > 0 ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Circle className="h-4 w-4 text-slate-300" />
+              )}
+              AI summary generated
+            </li>
+          </ul>
+          {shift.createdAt && (
+            <p className="mt-3 text-xs text-slate-400">Shift created {formatDate(shift.createdAt)}</p>
+          )}
+        </SectionCard>
       </div>
 
       <div className="mt-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">AI Shift Summaries</h2>
-          <button
-            type="button"
-            onClick={handleGenerateSummary}
-            disabled={generatingSummary}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-900">AI Shift Summaries</h2>
+          <Button onClick={handleGenerateSummary} disabled={generatingSummary} size="sm">
             <Sparkles className="h-4 w-4" />
             {generatingSummary ? 'Generating...' : 'Generate AI Summary'}
-          </button>
+          </Button>
         </div>
         {summaries.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
+          <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">
             No AI summary yet. Generate one from shift data before handover.
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {summaries.map((summary, i) => (
               <SummaryCard
                 key={summary.id}

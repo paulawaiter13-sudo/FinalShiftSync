@@ -10,10 +10,14 @@ import { Modal } from '../components/ui/Modal';
 import { Select } from '../components/ui/Select';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { EmptyState } from '../components/ui/EmptyState';
+import { SearchInput } from '../components/ui/SearchInput';
+import { Button } from '../components/ui/Button';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import { formatDate } from '../utils/format';
 import { announcementPriorityLabels } from '../utils/labels';
 import { isAnnouncementRead, isExpired, markAnnouncementRead } from '../utils/announcements';
 import { ApiError } from '../services/api';
+import { useUnreadAnnouncements } from '../hooks/useUnreadAnnouncements';
 
 const MANAGER_ROLES: UserRole[] = ['SHIFT_MANAGER', 'ADMIN'];
 
@@ -25,13 +29,19 @@ function priorityVariant(p: AnnouncementPriority) {
   return 'default' as const;
 }
 
+function shortId(id: string): string {
+  return `ANN-${id.slice(-4).toUpperCase()}`;
+}
+
 export function AnnouncementsPage() {
   const { user } = useAuth();
   const canManage = user && MANAGER_ROLES.includes(user.role);
+  const { refresh: refreshUnread } = useUnreadAnnouncements();
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('all');
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -69,11 +79,19 @@ export function AnnouncementsPage() {
 
   const filtered = useMemo(() => {
     return announcements.filter((a) => {
-      if (tab === 'urgent') return a.priority === 'URGENT';
-      if (tab === 'unread') return !isAnnouncementRead(a.id);
+      if (tab === 'urgent' && a.priority !== 'URGENT') return false;
+      if (tab === 'unread' && isAnnouncementRead(a.id)) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        return (
+          a.title.toLowerCase().includes(q) ||
+          a.content.toLowerCase().includes(q) ||
+          shortId(a.id).toLowerCase().includes(q)
+        );
+      }
       return true;
     });
-  }, [announcements, tab, readVersion]);
+  }, [announcements, tab, readVersion, search]);
 
   const selected = filtered.find((a) => a.id === selectedId) ?? filtered[0] ?? null;
 
@@ -83,6 +101,14 @@ export function AnnouncementsPage() {
     setSelectedId(id);
     markAnnouncementRead(id);
     setReadVersion((v) => v + 1);
+    refreshUnread();
+  };
+
+  const handleMarkAsRead = () => {
+    if (!selected) return;
+    markAnnouncementRead(selected.id);
+    setReadVersion((v) => v + 1);
+    refreshUnread();
   };
 
   const openCreate = () => {
@@ -120,6 +146,7 @@ export function AnnouncementsPage() {
       }
       setModalOpen(false);
       await load();
+      refreshUnread();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to save announcement');
     } finally {
@@ -132,6 +159,7 @@ export function AnnouncementsPage() {
     try {
       await announcementApi.deleteAnnouncement(id);
       await load();
+      refreshUnread();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to delete');
     }
@@ -144,20 +172,16 @@ export function AnnouncementsPage() {
         subtitle="Operational updates and procedures from shift management"
         actions={
           canManage ? (
-            <button
-              type="button"
-              onClick={openCreate}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
+            <Button onClick={openCreate}>
               <Plus className="h-4 w-4" /> New Announcement
-            </button>
+            </Button>
           ) : undefined
         }
       />
 
       <ErrorAlert message={error} onDismiss={() => setError('')} />
 
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-slate-200">
+      <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-slate-200">
         {(
           [
             { key: 'all' as Tab, label: `All (${announcements.length})` },
@@ -176,6 +200,11 @@ export function AnnouncementsPage() {
             }`}
           >
             {label}
+            {key === 'unread' && unreadCount > 0 && (
+              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white">
+                {unreadCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -185,107 +214,141 @@ export function AnnouncementsPage() {
       ) : filtered.length === 0 ? (
         <EmptyState icon={Megaphone} title="No announcements" />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-5">
-          <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm lg:col-span-2">
-            <div className="divide-y divide-slate-100">
-              {filtered.map((a) => {
-                const unread = !isAnnouncementRead(a.id);
-                const active = selected?.id === a.id;
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onClick={() => selectAnnouncement(a.id)}
-                    className={`w-full px-4 py-3 text-left transition-colors ${
-                      active
-                        ? 'border-l-4 border-l-blue-600 bg-blue-50/50'
-                        : 'border-l-4 border-l-transparent hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          {unread && (
-                            <span className="rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                              NEW
-                            </span>
-                          )}
-                          <span className="truncate text-sm font-medium text-slate-800">
-                            {a.title}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-xs text-slate-400">
-                          {formatDate(a.createdAt)}
-                        </p>
-                      </div>
-                      <Badge variant={priorityVariant(a.priority)}>
-                        {announcementPriorityLabels[a.priority]}
-                      </Badge>
-                    </div>
-                  </button>
-                );
-              })}
+        <div className="card overflow-hidden">
+          <div className="grid lg:grid-cols-5">
+            <div className="border-b border-slate-100 lg:col-span-2 lg:border-b-0 lg:border-r">
+              <div className="border-b border-slate-100 p-3">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="Search announcements..."
+                />
+              </div>
+              <div className="max-h-[520px] overflow-y-auto">
+                <table className="data-table w-full text-sm">
+                  <thead className="sticky top-0 border-b border-slate-100 bg-slate-50/95">
+                    <tr>
+                      <th className="px-3 py-2">ID</th>
+                      <th className="px-3 py-2">Title</th>
+                      <th className="hidden px-3 py-2 sm:table-cell">Published</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filtered.map((a) => {
+                      const unread = !isAnnouncementRead(a.id);
+                      const active = selected?.id === a.id;
+                      return (
+                        <tr
+                          key={a.id}
+                          onClick={() => selectAnnouncement(a.id)}
+                          className={`cursor-pointer transition-colors ${
+                            active
+                              ? 'border-l-2 border-l-blue-600 bg-blue-50/60'
+                              : 'border-l-2 border-l-transparent hover:bg-slate-50'
+                          }`}
+                        >
+                          <td className="px-3 py-2.5 text-xs font-mono text-slate-500">
+                            {shortId(a.id)}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-start gap-1.5">
+                              {a.priority === 'URGENT' && (
+                                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-500" />
+                              )}
+                              {unread && (
+                                <span className="mt-0.5 rounded bg-orange-500 px-1 py-px text-[9px] font-bold text-white">
+                                  NEW
+                                </span>
+                              )}
+                              <span className="line-clamp-2 text-sm font-medium text-slate-800">
+                                {a.title}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="hidden px-3 py-2.5 text-xs text-slate-400 sm:table-cell">
+                            {formatDate(a.createdAt)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
 
-          {selected && (
-            <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm lg:col-span-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={priorityVariant(selected.priority)}>
-                      {announcementPriorityLabels[selected.priority]}
-                    </Badge>
-                    {!isAnnouncementRead(selected.id) && (
-                      <Badge variant="orange">Unread</Badge>
-                    )}
-                    {isExpired(selected.expiresAt) && (
-                      <Badge variant="default">Expired</Badge>
-                    )}
+            {selected && (
+              <div className="p-5 lg:col-span-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-mono text-slate-400">{shortId(selected.id)}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <Badge variant={priorityVariant(selected.priority)}>
+                        {announcementPriorityLabels[selected.priority]}
+                      </Badge>
+                      {!isAnnouncementRead(selected.id) && (
+                        <Badge variant="orange">Unread</Badge>
+                      )}
+                      {isExpired(selected.expiresAt) && (
+                        <Badge variant="default">Expired</Badge>
+                      )}
+                    </div>
+                    <h2 className="mt-2 text-lg font-bold text-slate-900">{selected.title}</h2>
+                    <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                      <UserAvatar name={selected.creator.fullName} size="sm" />
+                      <span>
+                        Published {formatDate(selected.createdAt)} by {selected.creator.fullName}
+                      </span>
+                    </div>
                   </div>
-                  <h2 className="mt-2 text-xl font-bold text-slate-900">{selected.title}</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Published {formatDate(selected.createdAt)} by {selected.creator.fullName}
-                  </p>
+                  {canManage && (
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(selected)}
+                        className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                        aria-label="Edit announcement"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(selected.id)}
+                        className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
+                        aria-label="Delete announcement"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {canManage && (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(selected)}
-                      className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(selected.id)}
-                      className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+
+                {selected.priority === 'URGENT' && (
+                  <div className="mt-4 flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <strong>Urgent:</strong> Immediate attention required
+                  </div>
+                )}
+
+                <div className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                  {selected.content}
+                </div>
+
+                {selected.expiresAt && (
+                  <p className="mt-4 text-xs text-slate-400">
+                    Expires: {formatDate(selected.expiresAt)}
+                  </p>
+                )}
+
+                {!isAnnouncementRead(selected.id) && (
+                  <div className="mt-5 border-t border-slate-100 pt-4">
+                    <Button onClick={handleMarkAsRead} size="sm">
+                      Mark as Read
+                    </Button>
                   </div>
                 )}
               </div>
-
-              {selected.priority === 'URGENT' && (
-                <div className="mt-4 flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  <strong>Urgent:</strong> Immediate attention required
-                </div>
-              )}
-
-              <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                {selected.content}
-              </div>
-
-              {selected.expiresAt && (
-                <p className="mt-4 text-xs text-slate-400">
-                  Expires: {formatDate(selected.expiresAt)}
-                </p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -302,7 +365,7 @@ export function AnnouncementsPage() {
               required
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div>
@@ -312,7 +375,7 @@ export function AnnouncementsPage() {
               rows={8}
               value={form.content}
               onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -339,13 +402,9 @@ export function AnnouncementsPage() {
               />
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? 'Saving...' : editing ? 'Update' : 'Publish'}
-          </button>
+          </Button>
         </form>
       </Modal>
     </div>
